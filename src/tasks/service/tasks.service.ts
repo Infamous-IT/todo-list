@@ -8,40 +8,45 @@ import { Task } from '../entities/task.entity';
 export class TasksService {
     constructor(private readonly prismaService: PrismaService) {}
 
-    async create(createTaskDto: CreateTaskDto): Promise<Task> {
+    async create(createTaskDto: CreateTaskDto, userId: number): Promise<Task> {
         const task = await this.prismaService.task.create({
-            data: createTaskDto,
+            data: {
+                ...createTaskDto,
+                userId,
+            },
         });
         return task;
     }
 
-    async findAll() {
-        return this.prismaService.task.findMany();
+    async findAll(userId: number): Promise<Task[]> {
+        return this.prismaService.task.findMany({
+            where: { userId },
+        });
     }
 
-    async findOne(id: number) {
-        return await this.getTaskOrThrow(id);
+    async findOne(id: number, userId: number) {
+        return await this.getTaskOrThrow(id, userId);
     }
 
-    async update(id: number, updateTaskDto: UpdateTaskDto) {
-        await this.getTaskOrThrow(id);
+    async update(id: number, updateTaskDto: UpdateTaskDto, userId: number) {
+        await this.getTaskOrThrow(id, userId);
 
         const updatedTask = await this.prismaService.task.update({
-            where: { id },
+            where: { id, userId },
             data: updateTaskDto,
         });
 
         return updatedTask;
     }
 
-    async remove(id: number) {
-        await this.getTaskOrThrow(id);
-        return this.prismaService.task.delete({ where: { id } });
+    async remove(id: number, userId: number) {
+        await this.getTaskOrThrow(id, userId);
+        return this.prismaService.task.delete({ where: { id, userId } });
     }
 
-    private async getTaskOrThrow(id: number) {
+    private async getTaskOrThrow(id: number, userId?: number) {
         const task = await this.prismaService.task.findUnique({
-            where: { id },
+            where: { id, userId },
         });
 
         if (!task) {
